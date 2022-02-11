@@ -19,7 +19,7 @@ what do you want
 🙂
 michelle ombama
 HI <user> <ping> <ping>
-HI <msg>? <ping> <ping>
+huh <msg>? <ping> <ping>
 HI
 c
 wow thats so cool

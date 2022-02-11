@@ -39,29 +39,21 @@ pub async fn messages(ctx: &Context, msg: &Message) {
     }
     // Otherwise, listen in for potential quips.
     else {
-        let msg_match = msg.content.to_lowercase();
-        if SNAGS.iter().any(|&snag| is_match(snag, &msg_match)) {
+        let text = msg.content.to_lowercase();
+        if SNAGS.iter().any(|&s| is_match(s, &text)) {
             logret!(msg.channel_id.say(ctx, get_response(ctx, msg).await).await);
         }
     }
 }
 
-fn is_match(snag: &str, substr: &str) -> bool {
-    use bitap::Match;
+fn is_match(substr: &str, text: &str) -> bool {
+    let rand = rand::thread_rng().gen_range(0.0..1.0);
 
-    let pat = bitap::Pattern::new(snag).unwrap();
-    let mut iter = pat.lev(&substr, 5);
+    text.split(|c: char| !c.is_alphanumeric()).any(|s| {
+        let dist = strsim::normalized_damerau_levenshtein(s, substr);
 
-    match iter.next() {
-        Some(Match { distance: 0, .. }) => true,
-        Some(Match { distance: d, .. }) => {
-            // https://www.desmos.com/calculator/s0mkdaieca
-            let exp = -(d as f64) / 2.0;
-            let chance = 1.0 - 1.0 / (1.0 + 2.7182_f64.powf(exp));
-            chance < rand::thread_rng().gen_range(0.0..1.0)
-        }
-        None => false,
-    }
+        dist * dist > rand
+    })
 }
 
 async fn get_response(ctx: &Context, msg: &Message) -> String {

@@ -7,6 +7,6 @@ edition = "2021"
 serenity = "0.10.10"
 tokio = { version = "1.16.1", features = ["rt-multi-thread"] }
 rand = "0.8.4"
-bitap = "0.2.0"
+strsim = "0.10.0"
 lazy_static = "1.4.0"
 chrono = "0.4.19"
