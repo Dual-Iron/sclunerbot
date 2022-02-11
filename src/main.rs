@@ -38,11 +38,8 @@ async fn main() {
 macro_rules! dbge {
     ($e:expr) => {
         if let Err(e) = $e {
-            use std::time::SystemTime;
-            dbg!(SystemTime::now()
-                .duration_since(std::time::SystemTime::UNIX_EPOCH)
-                .unwrap());
-            dbg!(e.to_string());
+            let time = chrono::Local::now().format("%X %v");
+            println!("{time:25}{e}");
         }
     };
 }

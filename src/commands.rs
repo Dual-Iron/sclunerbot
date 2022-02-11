@@ -43,18 +43,34 @@ pub async fn messages(ctx: &Context, msg: &Message) {
             dbge!(msg.reply(&ctx.http, e.to_string()).await);
         }
     } else {
-        let max_rand = rand::thread_rng().gen_range(0..=7);
+        let max_rand = (sq_rand() * 9.) as usize;
         if SNAGS
             .iter()
-            .any(|&s| strsim::damerau_levenshtein(s, &msg.content) < max_rand)
+            .any(|&s| strsim::damerau_levenshtein(s, &msg.content.to_lowercase()) < max_rand)
         {
-            let response = QUIPS.choose(&mut thread_rng()).unwrap();
-            let response = response
-                .replace("<ping>", &msg.author.mention().to_string())
-                .replace("<user>", &get_nick(ctx, msg).await);
+            let response = get_response(msg, ctx).await;
+
             dbge!(msg.channel_id.say(&ctx.http, response).await);
         }
     }
+}
+
+fn sq_rand() -> f64 {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(0.0..1.) * rng.gen_range(0.0..1.)
+}
+
+async fn get_response(msg: &Message, ctx: &Context) -> String {
+    let response = QUIPS.choose(&mut thread_rng()).unwrap();
+    let mut response = response
+        .replace("<ping>", &msg.author.mention().to_string())
+        .replace("<user>", &get_nick(ctx, msg).await);
+    let screaming_text =
+        msg.content.chars().filter(|c| c.is_uppercase()).count() > msg.content.len() / 2;
+    if screaming_text {
+        response.make_ascii_uppercase();
+    }
+    response
 }
 
 async fn get_nick(ctx: &Context, msg: &Message) -> String {
