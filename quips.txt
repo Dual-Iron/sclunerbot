@@ -10,7 +10,7 @@ hi <ping>
 WHAT do you want <user>
 ping <ping>
 <ping> <ping> <ping> <ping>
-<emoji> :crossed_swords: <emoji>
+<emoji> :crossed_swords: <emoji2>
 pong
 what (:
 <:scluner:938646284196249610>

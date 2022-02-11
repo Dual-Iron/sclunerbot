@@ -13,16 +13,7 @@ lazy_static::lazy_static! {
     };
 }
 
-const SNAGS: &[&'static str] = &[
-    "scluner",
-    "sclooner",
-    "schloon",
-    "scloonie",
-    "scloob",
-    "@scluner#7833",
-    // I could include `<@941409497149239396>`, but as-is there's a small chance he won't respond to pings from mobile users which I find funny
-    "<@!941409497149239396>",
-];
+const SNAGS: &[&'static str] = &["scluner", "@scluner#7833", "<@!941409497149239396>"];
 
 // Called when the bot receives a message.
 #[hook]
@@ -48,26 +39,29 @@ pub async fn messages(ctx: &Context, msg: &Message) {
     }
     // Otherwise, listen in for potential quips.
     else {
-        let max_dist = 1 + (sq_rand() * 5.0) as usize;
         let msg_match = msg.content.to_lowercase();
-        if SNAGS
-            .iter()
-            .any(|&snag| is_match(snag, &msg_match, max_dist))
-        {
+        if SNAGS.iter().any(|&snag| is_match(snag, &msg_match)) {
             logret!(msg.channel_id.say(ctx, get_response(ctx, msg).await).await);
         }
     }
 }
 
-fn is_match(snag: &str, substr: &str, max_dist: usize) -> bool {
-    let pat = bitap::Pattern::new(snag).unwrap();
-    let mut lev = pat.lev(&substr, max_dist);
-    lev.next().is_some()
-}
+fn is_match(snag: &str, substr: &str) -> bool {
+    use bitap::Match;
 
-fn sq_rand() -> f64 {
-    let mut rng = rand::thread_rng();
-    rng.gen_range(0.0..1.0) * rng.gen_range(0.0..1.0)
+    let pat = bitap::Pattern::new(snag).unwrap();
+    let mut iter = pat.lev(&substr, 5);
+
+    match iter.next() {
+        Some(Match { distance: 0, .. }) => true,
+        Some(Match { distance: d, .. }) => {
+            // https://www.desmos.com/calculator/s0mkdaieca
+            let exp = -(d as f64) / 2.0;
+            let chance = 1.0 - 1.0 / (1.0 + 2.7182_f64.powf(exp));
+            chance < rand::thread_rng().gen_range(0.0..1.0)
+        }
+        None => false,
+    }
 }
 
 async fn get_response(ctx: &Context, msg: &Message) -> String {
@@ -76,7 +70,8 @@ async fn get_response(ctx: &Context, msg: &Message) -> String {
         .replace("<ping>", &msg.author.mention().to_string())
         .replace("<user>", &crate::nick(&msg.author.name, true))
         .replace("<msg>", &crate::nick(&msg.content, true))
-        .replace("<emoji>", &get_emoji_txt(ctx, msg).await);
+        .replace("<emoji>", &get_emoji_txt(ctx, msg).await)
+        .replace("<emoji2>", &get_emoji_txt(ctx, msg).await);
     let screaming_text =
         msg.content.chars().filter(|c| c.is_uppercase()).count() > msg.content.len() / 2;
     if screaming_text {
