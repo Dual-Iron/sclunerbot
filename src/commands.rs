@@ -1,9 +1,9 @@
-use crate::dbge;
+use crate::logret;
 use rand::{prelude::*, thread_rng};
 use serenity::{
     client::Context,
     framework::standard::macros::hook,
-    model::{channel::Message, id::ChannelId},
+    model::{channel::Message, guild::Emoji, id::ChannelId},
     prelude::Mentionable,
 };
 
@@ -13,58 +13,70 @@ lazy_static::lazy_static! {
     };
 }
 
-static SNAGS: &[&'static str] = &[
+const SNAGS: &[&'static str] = &[
     "scluner",
     "sclooner",
     "schloon",
+    "scloonie",
+    "scloob",
     "@scluner#7833",
+    // I could include `<@941409497149239396>`, but as-is there's a small chance he won't respond to pings from mobile users which I find funny
     "<@!941409497149239396>",
 ];
 
 // Called when the bot receives a message.
 #[hook]
 pub async fn messages(ctx: &Context, msg: &Message) {
-    // If the bot owner DMs the bot with `[channel_id] [content]`, make the bot send [content] in that channel.
+    // Let the owner send messages as the bot.
     if msg.guild_id.is_none() && msg.author.id == 303617148411183105 {
         if let Some((id, content)) = msg.content.split_once(' ') {
             if let Ok(id) = id.parse() {
-                dbge!(ChannelId(id).say(&ctx.http, content).await);
+                logret!(ChannelId(id).say(ctx, content).await);
                 return;
             }
         }
     }
 
-    // Otherwise, send the message to some hardcoded channel.
+    // If it's another DM, send the message to some hardcoded channel.
     if msg.guild_id.is_none() {
         let reply = ChannelId(941476148347551764)
-            .say(&ctx.http, msg.content_safe(ctx).await)
+            .say(ctx, msg.content_safe(ctx).await)
             .await;
         if let Err(e) = reply {
-            dbge!(msg.reply(&ctx.http, e.to_string()).await);
+            logret!(msg.reply(ctx, e.to_string()).await);
         }
-    } else {
-        let max_rand = (sq_rand() * 9.) as usize;
+    }
+    // Otherwise, listen in for potential quips.
+    else {
+        let max_dist = 1 + (sq_rand() * 5.0) as usize;
+        let msg_match = msg.content.to_lowercase();
         if SNAGS
             .iter()
-            .any(|&s| strsim::damerau_levenshtein(s, &msg.content.to_lowercase()) < max_rand)
+            .any(|&snag| is_match(snag, &msg_match, max_dist))
         {
-            let response = get_response(msg, ctx).await;
-
-            dbge!(msg.channel_id.say(&ctx.http, response).await);
+            logret!(msg.channel_id.say(ctx, get_response(ctx, msg).await).await);
         }
     }
 }
 
-fn sq_rand() -> f64 {
-    let mut rng = rand::thread_rng();
-    rng.gen_range(0.0..1.) * rng.gen_range(0.0..1.)
+fn is_match(snag: &str, substr: &str, max_dist: usize) -> bool {
+    let pat = bitap::Pattern::new(snag).unwrap();
+    let mut lev = pat.lev(&substr, max_dist);
+    lev.next().is_some()
 }
 
-async fn get_response(msg: &Message, ctx: &Context) -> String {
+fn sq_rand() -> f64 {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(0.0..1.0) * rng.gen_range(0.0..1.0)
+}
+
+async fn get_response(ctx: &Context, msg: &Message) -> String {
     let response = QUIPS.choose(&mut thread_rng()).unwrap();
     let mut response = response
         .replace("<ping>", &msg.author.mention().to_string())
-        .replace("<user>", &get_nick(ctx, msg).await);
+        .replace("<user>", &crate::nick(&msg.author.name, true))
+        .replace("<msg>", &crate::nick(&msg.content, true))
+        .replace("<emoji>", &get_emoji_txt(ctx, msg).await);
     let screaming_text =
         msg.content.chars().filter(|c| c.is_uppercase()).count() > msg.content.len() / 2;
     if screaming_text {
@@ -73,15 +85,16 @@ async fn get_response(msg: &Message, ctx: &Context) -> String {
     response
 }
 
-async fn get_nick(ctx: &Context, msg: &Message) -> String {
-    let mut raw = msg
-        .author
-        .nick_in(ctx, msg.guild_id.unwrap())
-        .await
-        .unwrap_or_else(|| msg.author.name.clone());
+async fn get_emoji_txt(ctx: &Context, msg: &Message) -> String {
+    match get_emojis(ctx, msg).await.choose(&mut thread_rng()) {
+        Some(e) => e.to_string(),
+        None => ":slight_smile:".to_string(),
+    }
+}
 
-    let whitespace_pos = raw.split_whitespace().next().unwrap_or(&raw).len();
-    raw.truncate(whitespace_pos);
-    raw.make_ascii_lowercase();
-    raw
+async fn get_emojis(ctx: &Context, msg: &Message) -> Vec<Emoji> {
+    match msg.guild(ctx).await {
+        Some(g) => g.emojis(ctx).await.unwrap_or_default(),
+        None => Vec::new(),
+    }
 }

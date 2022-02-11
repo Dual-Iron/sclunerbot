@@ -1,16 +1,13 @@
-use serenity::async_trait;
-use serenity::client::{Client, EventHandler};
+#![feature(string_remove_matches)]
+
+use serenity::client::Client;
 use serenity::framework::standard::{macros::group, StandardFramework};
 
 mod commands;
+mod handler;
 
 #[group]
 struct General;
-
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {}
 
 #[tokio::main]
 async fn main() {
@@ -23,7 +20,7 @@ async fn main() {
     // Log in using a bot token provided by an environment variable.
     let token = std::env::var("DISCORD_TOKEN").expect("DISCORD_TOKEN environment variable");
     let mut client = Client::builder(token)
-        .event_handler(Handler)
+        .event_handler(handler::Handler)
         .framework(framework)
         .await
         .expect("error creating client");
@@ -34,13 +31,32 @@ async fn main() {
     client.start().await.unwrap();
 }
 
-// Quick macro to log errors.
-macro_rules! dbge {
+// Gets a scluner-friendly name
+pub fn nick(name: &str, cull: bool) -> String {
+    // This function could just take a `&mut String` but I'm lazy
+    let mut name = name.to_string();
+    if cull {
+        let whitespace_pos = name.split_whitespace().next().unwrap_or(&name).len();
+        name.truncate(whitespace_pos);
+    }
+    name.remove_matches(|c: char| !c.is_alphabetic());
+    name.make_ascii_lowercase();
+    name
+}
+
+// If there are errors, log them, then return from the function.
+macro_rules! logret {
     ($e:expr) => {
-        if let Err(e) = $e {
-            let time = chrono::Local::now().format("%X %v");
-            println!("{time:25}{e}");
+        match $e {
+            Ok(o) => o,
+            Err(e) => {
+                let time = chrono::Local::now().format("%X %v");
+                println!("{time:25}{e}");
+                dbg!(e);
+                println!();
+                return;
+            }
         }
     };
 }
-pub(crate) use dbge;
+pub(crate) use logret;
