@@ -43,7 +43,7 @@ pub async fn messages(ctx: &Context, msg: &Message) {
             dbge!(msg.reply(&ctx.http, e.to_string()).await);
         }
     } else {
-        let max_rand = rand::thread_rng().gen_range(1..6);
+        let max_rand = rand::thread_rng().gen_range(0..=7);
         if SNAGS
             .iter()
             .any(|&s| strsim::damerau_levenshtein(s, &msg.content) < max_rand)
