@@ -23,7 +23,7 @@ impl EventHandler for Handler {
         }
 
         // Say hello!
-        for (_, channel) in &guild.channels {
+        for channel in guild.channels.values() {
             if channel.is_text_based() {
                 let me = ctx.cache.current_user().await;
                 let perms = logret!(channel.permissions_for_user(&ctx, me).await);

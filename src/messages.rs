@@ -13,11 +13,11 @@ lazy_static::lazy_static! {
     };
 }
 
-const SNAGS: &[&'static str] = &["scluner", "@scluner#7833", "<@!941409497149239396>"];
+const SNAGS: &[&str] = &["scluner", "@scluner#7833", "<@!941409497149239396>"];
 
-// Called when the bot receives a message.
+// Called when the bot receives a message that wasn't handled by a command.
 #[hook]
-pub async fn messages(ctx: &Context, msg: &Message) {
+pub async fn handle_message(ctx: &Context, msg: &Message) {
     // Let the owner send messages as the bot.
     if msg.guild_id.is_none() && msg.author.id == 303617148411183105 {
         if let Some((id, content)) = msg.content.split_once(' ') {
@@ -52,7 +52,7 @@ fn is_match(substr: &str, text: &str) -> bool {
     text.split(|c: char| !c.is_alphanumeric()).any(|s| {
         let dist = strsim::normalized_damerau_levenshtein(s, substr);
 
-        dist * dist > rand
+        dist * dist * dist > rand
     })
 }
 
