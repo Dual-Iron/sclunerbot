@@ -1,0 +1,7 @@
+can't send a message with no text
+can't send a message that lacks text
+message gotta have text
+this message doesn't have any text
+give this message some text
+no text in this message
+add text to this

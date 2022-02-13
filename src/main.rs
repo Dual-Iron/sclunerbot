@@ -1,10 +1,13 @@
 #![feature(string_remove_matches)]
+#![feature(try_blocks)]
 
 use serenity::client::Client;
 use serenity::framework::standard::{macros::group, StandardFramework};
 
 mod handler;
+mod lang;
 mod messages;
+mod util;
 
 #[group]
 struct General;
@@ -14,7 +17,7 @@ async fn main() {
     // Accept ~ and pings for prefixes.
     let framework = StandardFramework::new()
         .configure(|c| c.prefixes(vec!["~", "<@!941409497149239396> "]))
-        .normal_message(messages::handle_message)
+        .normal_message(messages::handle_message_hook)
         .group(&GENERAL_GROUP);
 
     // Log in using a bot token provided by an environment variable.
