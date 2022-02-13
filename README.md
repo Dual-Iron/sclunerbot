@@ -1,1 +1,1 @@
-go wild with the [quips](quips.txt) file
+go wild with the [lang](lang) folder
