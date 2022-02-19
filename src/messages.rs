@@ -3,7 +3,7 @@ use rand::prelude::*;
 use serenity::{
     client::Context,
     framework::standard::macros::hook,
-    model::{channel::Message, guild::Guild, id::ChannelId},
+    model::{channel::Message, guild::Guild, id::ChannelId, prelude::Activity},
     prelude::Mentionable,
 };
 
@@ -23,6 +23,10 @@ pub async fn handle_message(ctx: &Context, msg: &Message) {
         if let Some((id, content)) = msg.content.split_once(' ') {
             if let Ok(id) = id.parse() {
                 logret!(ChannelId(id).say(ctx, content).await);
+                return;
+            }
+            if "status" == id {
+                ctx.set_activity(Activity::watching(content)).await;
                 return;
             }
         }

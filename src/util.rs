@@ -12,7 +12,7 @@ pub async fn can_send(ctx: &Context, channel: &GuildChannel) -> bool {
         && channel
             .permissions_for_user(ctx, ctx.cache.current_user().await)
             .await
-            .map(|p| p.send_messages())
+            .map(|p| p.send_messages() && p.read_messages())
             .unwrap_or_default()
 }
 
