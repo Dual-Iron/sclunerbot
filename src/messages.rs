@@ -8,7 +8,6 @@ use serenity::{
 };
 
 const SCLUNER_CHANNEL: ChannelId = ChannelId(941476148347551764);
-const SNAGS: &[&str] = &["scluner", "@scluner#7833", "<@!941409497149239396>"];
 
 // Separate hook so intellisense works.
 #[hook]
@@ -71,14 +70,25 @@ async fn guild_message(ctx: &Context, msg: &Message, guild: Guild) {
     if let Some(channel) = guild.channels.get(&msg.channel_id) {
         if can_send(ctx, channel).await {
             let text = msg.content.to_lowercase();
-            if SNAGS.iter().any(|&s| is_match(s, &text)) {
+            let should_reply = should_reply(ctx, msg, &text).await;
+            if should_reply {
                 logret!(msg.channel_id.say(ctx, get_response(ctx, msg).await).await);
             }
         }
     }
 }
 
-fn is_match(substr: &str, text: &str) -> bool {
+async fn should_reply(ctx: &Context, msg: &Message, text: &str) -> bool {
+    if let Some(m) = &msg.referenced_message {
+        // If replying to scluner, it should respond
+        m.author.id == ctx.cache.current_user().await.id
+    } else {
+        // Respond to direct pings and, sometimes, when it mistakes someone saying "scluner"
+        msg.mentions_me(ctx).await.unwrap_or(false) || is_match(text, "scluner")
+    }
+}
+
+fn is_match(text: &str, substr: &str) -> bool {
     let rand = rand::thread_rng().gen_range(0.0..1.0);
 
     text.split(|c: char| !c.is_alphanumeric()).any(|s| {
