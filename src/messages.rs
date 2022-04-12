@@ -89,7 +89,7 @@ async fn should_reply(ctx: &Context, msg: &Message, text: &str) -> bool {
 }
 
 fn is_match(text: &str, substr: &str) -> bool {
-    let rand = rand::thread_rng().gen_range(0.0..1.0);
+    let rand = thread_rng().gen_range(0.0..1.0);
 
     text.split(|c: char| !c.is_alphanumeric()).any(|s| {
         let dist = strsim::normalized_damerau_levenshtein(s, substr);
@@ -103,7 +103,7 @@ async fn get_response(ctx: &Context, msg: &Message) -> String {
     let mut response = response
         .replace("<ping>", &msg.author.mention().to_string())
         .replace("<user>", &crate::nick(&msg.author.name, true))
-        .replace("<msg>", &crate::nick(&msg.content, true))
+        .replace("<msg>", &random_word(&msg.content))
         .replace("<emoji>", &get_emoji_txt(ctx, msg.guild(ctx).await).await)
         .replace("<emoji2>", &get_emoji_txt(ctx, msg.guild(ctx).await).await);
     let screaming_text =
@@ -112,4 +112,17 @@ async fn get_response(ctx: &Context, msg: &Message) -> String {
         response.make_ascii_uppercase();
     }
     response
+}
+
+fn random_word(msg: &str) -> String {
+    let mut common = include_str!("../lang/common.txt")
+        .split(',')
+        .filter(|s| !s.trim().len() == 0);
+    let max_len = thread_rng().gen_range(5..14);
+
+    msg.split_whitespace()
+        .map(|s| crate::nick(s, false))
+        .filter(|s| s.len() <= max_len && !common.any(|c| c == s))
+        .choose(&mut thread_rng())
+        .unwrap_or("that".into())
 }

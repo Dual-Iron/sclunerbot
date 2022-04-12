@@ -1,6 +1,3 @@
-#![feature(string_remove_matches)]
-#![feature(try_blocks)]
-
 use serenity::client::Client;
 use serenity::framework::standard::{macros::group, StandardFramework};
 
@@ -42,9 +39,8 @@ pub fn nick(name: &str, cull: bool) -> String {
         let whitespace_pos = name.split_whitespace().next().unwrap_or(&name).len();
         name.truncate(whitespace_pos);
     }
-    name.remove_matches(|c: char| !c.is_alphabetic());
     name.make_ascii_lowercase();
-    name
+    name.replace(|c: char| !c.is_alphabetic() && c != '~', "")
 }
 
 // If there are errors, log them, then return from the function.
