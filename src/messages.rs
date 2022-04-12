@@ -99,19 +99,37 @@ fn is_match(text: &str, substr: &str) -> bool {
 }
 
 async fn get_response(ctx: &Context, msg: &Message) -> String {
-    let response = crate::lang::quip();
-    let mut response = response
+    let mut response = crate::lang::quip().to_string();
+
+    // Scream if they screamed. Make sure to exclude the special parts inside `<>`
+    let screaming_text =
+        msg.content.chars().filter(|c| c.is_uppercase()).count() > msg.content.len() / 2;
+    if screaming_text {
+        let mut response_screaming = String::with_capacity(response.len());
+        let mut special_part = false;
+        for c in response.chars() {
+            if c == '<' {
+                special_part = true;
+            } else if c == '>' {
+                special_part = false;
+            }
+
+            if special_part {
+                response_screaming.push(c);
+            } else {
+                response_screaming.push(c.to_ascii_uppercase());
+            }
+        }
+        response = response_screaming;
+    }
+
+    // Replace special parts with the relevant text
+    response
         .replace("<ping>", &msg.author.mention().to_string())
         .replace("<user>", &crate::nick(&msg.author.name, true))
         .replace("<msg>", &random_word(&msg.content))
         .replace("<emoji>", &get_emoji_txt(ctx, msg.guild(ctx).await).await)
-        .replace("<emoji2>", &get_emoji_txt(ctx, msg.guild(ctx).await).await);
-    let screaming_text =
-        msg.content.chars().filter(|c| c.is_uppercase()).count() > msg.content.len() / 2;
-    if screaming_text {
-        response.make_ascii_uppercase();
-    }
-    response
+        .replace("<emoji2>", &get_emoji_txt(ctx, msg.guild(ctx).await).await)
 }
 
 fn random_word(msg: &str) -> String {
