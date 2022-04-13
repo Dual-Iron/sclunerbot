@@ -134,7 +134,7 @@ async fn get_response(ctx: &Context, msg: &Message) -> String {
 
 fn random_word(msg: &str) -> String {
     let mut common = include_str!("../lang/common.txt")
-        .split(',')
+        .lines()
         .filter(|s| !s.trim().len() == 0);
 
     let len_range = 1..thread_rng().gen_range(6..=14);
