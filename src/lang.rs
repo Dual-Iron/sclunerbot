@@ -16,3 +16,4 @@ macro_rules! add_file {
 
 add_file!(QUIPS, quip, "quips.txt");
 add_file!(MSG_LACKS_TEXT, lacks_text, "message_lacks_text.txt");
+add_file!(COMMON_WORDS, ___, "common.txt");

@@ -133,15 +133,12 @@ async fn get_response(ctx: &Context, msg: &Message) -> String {
 }
 
 fn random_word(msg: &str) -> String {
-    let mut common = include_str!("../lang/common.txt")
-        .lines()
-        .filter(|s| !s.trim().len() == 0);
-
+    let common_words = &crate::lang::COMMON_WORDS;
     let len_range = 1..thread_rng().gen_range(6..=14);
 
     msg.split_whitespace()
         .map(|s| crate::nick(s, false))
-        .filter(|s| len_range.contains(&s.len()) && !common.any(|c| c == s))
+        .filter(|s| len_range.contains(&s.len()) && !common_words.contains(&s.as_str()))
         .choose(&mut thread_rng())
         .unwrap_or("that".into())
 }
