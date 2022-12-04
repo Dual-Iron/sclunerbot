@@ -13,7 +13,7 @@ struct General;
 async fn main() {
     // Accept ~ and pings for prefixes.
     let framework = StandardFramework::new()
-        .configure(|c| c.prefixes(vec!["~", "<@!941409497149239396> "]))
+        .configure(|c| c.prefixes(vec!["<@!941409497149239396> "]))
         .normal_message(messages::handle_message_hook)
         .group(&GENERAL_GROUP);
 

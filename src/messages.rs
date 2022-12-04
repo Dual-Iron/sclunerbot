@@ -94,7 +94,7 @@ fn is_match(text: &str, substr: &str) -> bool {
     text.split(|c: char| !c.is_alphanumeric()).any(|s| {
         let dist = strsim::normalized_damerau_levenshtein(s, substr);
 
-        dist * dist * dist > rand
+        dist.powf(2.2) > rand
     })
 }
 
