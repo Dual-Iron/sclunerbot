@@ -1,6 +1,7 @@
 use crate::{logret, util::*};
 use rand::prelude::*;
 use serenity::{
+    builder::GetMessages,
     client::Context,
     framework::standard::macros::hook,
     model::{channel::Message, guild::Guild, id::ChannelId, prelude::Activity},
@@ -55,7 +56,7 @@ async fn dm(ctx: &Context, msg: &Message) {
         return;
     }
     // Get one of the latest 200 messages in SCLUNER_CHANNEL so we can reply with it.
-    match SCLUNER_CHANNEL.messages(ctx, |g| g.limit(200)).await {
+    match SCLUNER_CHANNEL.messages(ctx, choose_messages).await {
         Ok(messages) => {
             let chosen = logret!(messages.choose(&mut rand::thread_rng()).ok_or("how"));
             let chosen_content = chosen.content_safe(ctx).await;
@@ -67,6 +68,23 @@ async fn dm(ctx: &Context, msg: &Message) {
             logret!(msg.reply(ctx, "couldn't fetch from scluner channel").await);
         }
     }
+}
+
+fn choose_messages(g: &mut GetMessages) -> &mut GetMessages {
+    let rand = thread_rng().gen_range(0..10);
+    match rand {
+        0 => g.around(1053756384891654154),
+        1 => g.around(1053405728192352329),
+        2 => g.around(1051937183830908938),
+        3 => g.around(1049404756864540722),
+        4 => g.around(1048501031484526733),
+        5 => g.around(1047745893916495892),
+        6 => g.around(1047737192019152936),
+        7 => g.around(1047727018743189574),
+        8 => g.around(1047733482627006484),
+        _ => g,
+    }
+    .limit(200)
 }
 
 async fn guild_message(ctx: &Context, msg: &Message, guild: Guild) {
