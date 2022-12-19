@@ -33,7 +33,7 @@ pub async fn handle_message(ctx: &Context, msg: &Message) {
     }
 
     if let Some(guild) = msg.guild(ctx).await {
-        if guild.id.0 == 557698803042615316 {
+        if guild.name == "h(orse) h(ouse)" {
             dm(ctx, msg).await
         } else {
             guild_message(ctx, msg, guild).await
